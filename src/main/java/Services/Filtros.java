@@ -3,20 +3,20 @@ package Services;
 import DB.Usuario;
 
 import static spark.Spark.before;
-import static spark.Spark.halt;
 
 public class Filtros {
     public void filtros() {
 
 
         before((request, response) -> System.out.println("Ruta antes: " + request.pathInfo()));
-
+        before("/inicio", (request, response) -> response.redirect("/inicio/1"));
         before("/agregarPost", (request, response) -> {
 
             Usuario usuario = request.session(true).attribute("usuario");
 
             if (usuario == null || (!usuario.getAutor() && !usuario.getAdministrator())) {
-                response.redirect("/inicio");
+                response.redirect("/inicio/1");
+
             }
 
         });
@@ -26,7 +26,8 @@ public class Filtros {
             Usuario usuario = request.session(true).attribute("usuario");
 
             if (usuario == null || !usuario.getAdministrator()) {
-                response.redirect("/inicio");
+                response.redirect("/inicio/1");
+
             }
 
         });
@@ -36,7 +37,8 @@ public class Filtros {
             Usuario usuario = request.session(true).attribute("usuario");
 
             if (usuario == null) {
-                response.redirect("/inicio");
+                response.redirect("/inicio/1");
+
             }
 
         });

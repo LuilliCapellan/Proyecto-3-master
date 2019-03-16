@@ -17,5 +17,7 @@ public interface EtiquetaDAO {
     Etiqueta getById(long id);
 
     List<Etiqueta> getByArticulo(long id);
+
+
 }
 

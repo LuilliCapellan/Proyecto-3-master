@@ -1,12 +1,6 @@
-import DB.Articulo;
-import DB.Comentario;
-import DB.Etiqueta;
-import DB.Usuario;
+import DB.*;
 import Services.Crypto;
-import Services.Entitys.ArticuloService;
-import Services.Entitys.ComentarioService;
-import Services.Entitys.EtiquetaService;
-import Services.Entitys.UsuarioService;
+import Services.Entitys.*;
 import Services.Filtros;
 import Services.ServiceInit;
 import freemarker.template.Configuration;
@@ -16,10 +10,7 @@ import spark.Session;
 import spark.template.freemarker.FreeMarkerEngine;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static spark.Spark.*;
 
@@ -39,6 +30,8 @@ public class Main {
         ArticuloService articuloService = new ArticuloService();
         EtiquetaService etiquetaService = new EtiquetaService();
         ComentarioService comentarioService = new ComentarioService();
+
+        LikesService likesService = new LikesService();
 
         staticFiles.location("/Template");
 
@@ -75,20 +68,31 @@ public class Main {
                     usuario = usuario1;
                     request.session(true);
                     request.session().attribute("usuario", usuario);
-
-                    response.redirect("/inicio");
-//                    return modelAndView(attributes, "home.ftl");
+                    response.redirect("/inicio/1");
                 }
             }
             return new ModelAndView(attributes, "login.ftl");
         }, freeMarkerEngine);
 
-        get("/inicio", (request, response) -> {
+        get("/inicio/:pag", (request, response) -> {
+
+            String p = request.params("pag");
+            int pagina = Integer.parseInt(p);
+
             Map<String, Object> attributes = new HashMap<>();
-            attributes.put("titulo", "Inicio");
-            attributes.put("etiquetas", etiquetaService.getAll());
-            attributes.put("list", articuloService.getAll());
+
             userLevel(attributes);
+            attributes.put("titulo", "Inicio");
+
+            attributes.put("list", articuloService.getPagination(pagina));
+            attributes.put("actual", pagina);
+
+            attributes.put("paginas", Math.ceil(articuloService.cantPaginas() / 5f));
+
+
+            attributes.put("etiquetas", etiquetaService.getAll());
+            attributes.put("usuario", usuario);
+
             return new ModelAndView(attributes, "home.ftl");
         }, freeMarkerEngine);
 
@@ -99,29 +103,47 @@ public class Main {
             userLevel(attributes);
             Articulo articulo2 = articuloService.getById(Integer.parseInt(idArticulo));
             attributes.put("articulo", articulo2);
-            attributes.put("comentarios", comentarioService.getByArticulo(Integer.parseInt(idArticulo)));
-            attributes.put("etiquetas", etiquetaService.getByArticulo(Integer.parseInt(idArticulo)));
+            attributes.put("comentarios", articulo2.getListaComentarios());
+            attributes.put("etiquetas", articulo2.getListaEtiquetas());
+            attributes.put("cantLikes", likesService.LikesByArticuloId(articulo2.getId()));
+            attributes.put("cantDislikes", likesService.DislikesByArticuloId(articulo2.getId()));
+            attributes.put("usuario", usuario);
+
             return new ModelAndView(attributes, "post.ftl");
         }, freeMarkerEngine);
+        get("/articulos", (request, response) -> {
+            Map<String, Object> attributes = new HashMap<>();
+            String etiqueta = request.queryParams("etiqueta");
+            userLevel(attributes);
+            attributes.put("titulo", "Articulos por: " + etiqueta);
+            attributes.put("list", articuloService.getAllByEtiqueta(etiqueta));
+            attributes.put("etiquetas", etiquetaService.getAll());
+            attributes.put("usuario", usuario);
 
+            return new ModelAndView(attributes, "home.ftl");
+        }, freeMarkerEngine);
 
         post("/agregarComentario", (request, response) -> {
 
             if (usuario == null)
-                response.redirect("/errorPost/401");
+                response.redirect("/errorPost");
 
             String comentario = request.queryParams("comentario");
             String articulo = request.queryParams("articulo");
+            String autor = request.queryParams("autor");
 
-
+            Usuario usuario1 = usuarioService.getById(Integer.parseInt(autor));
             Articulo articulo1 = articuloService.getById(Integer.parseInt(articulo));
 
-            comentarioService.insert(new Comentario(comentario, usuario, articulo1));
+            Comentario comentario1 = new Comentario(comentario, usuario1, articulo1);
+
+            comentarioService.insert(comentario1);
 
 
             response.redirect("/verMas/" + articulo);
             return "";
         });
+
 
         get("/agregarPost", (request, response) -> {
             Map<String, Object> attributes = new HashMap<>();
@@ -141,7 +163,7 @@ public class Main {
 
                 a = articuloService.getbyAutor(usuario.getId());
             } else {
-                response.redirect("/errorPost/401");
+                response.redirect("/errorPost");
             }
 
             if (articuloService.buscarPost(a, articleid) || usuario.getAdministrator()) {
@@ -160,7 +182,7 @@ public class Main {
                 String ResultingTagString = String.valueOf(res);
                 attributes.put("etiquetas", ResultingTagString);
             } else {
-                response.redirect("/errorPost/401");
+                response.redirect("/errorPost");
             }
 
 
@@ -177,20 +199,26 @@ public class Main {
             String etiquetas = request.queryParams("etiquetas");
 
             String[] tagsarray = etiquetas.split(",");
-            Long articleid = articuloService.getNextID();
+            //Long articleid = articuloService.getNextID();
             Articulo art = new Articulo(titulo, cuerpo, autor, nowsql);
+            //articuloService.insert(art);
+
+            Set<Etiqueta> etiquetas1 = new HashSet<>();
+//
+
+            for (String s : tagsarray) {
+                Etiqueta e = new Etiqueta(s, art);
+                etiquetas1.add(e);
+            }
+
+            art.setListaEtiquetas(etiquetas1);
             articuloService.insert(art);
 
 
-            for (String s : tagsarray) {
-                Etiqueta e = new Etiqueta(s, articuloService.getById(articleid));
-                etiquetaService.insert(e);
-            }
-
-
-            response.redirect("/inicio");
+            response.redirect("/inicio/1");
             return "";
         });
+
 
         post("/iniciarSesion", (request, response) -> {
 
@@ -214,16 +242,15 @@ public class Main {
                     String userEncrypt = crypto.encrypt(user, iv, secretKeyUSer);
                     String contraEncrypt = crypto.encrypt(contra, iv, secretKeyContra);
 
-//                final String decryptedData = crypto.decrypt(encryptedData, iv, secretKey);
 
                     System.out.println("user encryp: " + userEncrypt + " contra encryp: " + contraEncrypt);
 
-                    response.cookie("/", "login", userEncrypt + "," + contraEncrypt, 604800, false); //incluyendo el path del cookie.
+                    response.cookie("/", "login", userEncrypt + "," + contraEncrypt, 604800, false);
                 }
                 usuario = usuario1;
                 request.session(true);
                 request.session().attribute("usuario", usuario);
-                response.redirect("/inicio");
+                response.redirect("/inicio/1");
             } else {
                 response.redirect("/");
             }
@@ -277,7 +304,7 @@ public class Main {
 
             if (usuario != null && ((idAutor == usuario.getId()) || usuario.getAdministrator())) {
                 articuloService.delete(articuloService.getById(idArticulo));
-                response.redirect("/inicio");
+                response.redirect("/inicio/1");
             } else {
                 response.redirect("/errorPost/401");
             }
@@ -300,7 +327,7 @@ public class Main {
             String admin = request.queryParams("admin");
             Usuario u = new Usuario(username, nombre, pass, admin != null, autor != null);
             usuarioService.insert(u);
-            response.redirect("/inicio");
+            response.redirect("/inicio/1");
             return "";
         });
 
@@ -311,7 +338,7 @@ public class Main {
             Session session = request.session(true);
             session.invalidate();
             response.removeCookie("/", "login");
-            response.redirect("/");
+            response.redirect("/inicio/1");
 
             return "";
         });
@@ -357,6 +384,92 @@ public class Main {
             userLevel(attributes);
             return new ModelAndView(attributes, "home.ftl");
         }, freeMarkerEngine);
+
+        get("/like/:post", (request, response) -> {
+
+            String post = request.params("post");
+
+            int idPost = Integer.parseInt(post);
+
+            Usuario usuario = request.session(true).attribute("usuario");
+            Articulo articulo = articuloService.getById(idPost);
+            if (usuario != null) {
+
+                if (!likesService.existsUsuario(usuario.getId(), TipoLike.LIKE) && !likesService.existsUsuario(usuario.getId(), TipoLike.DISLIKE)) {
+
+                    Likes likes1 = new Likes(articulo, usuario, TipoLike.LIKE);
+
+                    likesService.guardar(likes1);
+
+                    response.redirect("/verMas/" + articulo.getId());
+
+                } else {
+
+                    if (likesService.existsUsuario(usuario.getId(), TipoLike.LIKE)) {
+
+                        Likes likes = likesService.buscarByUsuario(usuario);
+                        likesService.borrar(likes);
+                    }
+
+                    if (likesService.existsUsuario(usuario.getId(), TipoLike.DISLIKE)) {
+
+                        Likes likes = likesService.buscarByUsuario(usuario);
+                        likesService.borrar(likes);
+
+                        Likes likes1 = new Likes(articulo, usuario, TipoLike.LIKE);
+                        likesService.guardar(likes1);
+
+                    }
+                    response.redirect("/verMas/" + idPost);
+                }
+
+            } else {
+                response.redirect("/errorPost");
+            }
+            return "";
+        });
+
+        get("dislike/:post", (request, response) -> {
+
+            String post = request.params("post");
+
+            int idPost = Integer.parseInt(post);
+            Usuario usuario = request.session(true).attribute("usuario");
+            Articulo articulo = articuloService.getById(idPost);
+
+            if (usuario != null) {
+
+                if (!likesService.existsUsuario(usuario.getId(), TipoLike.DISLIKE) && !likesService.existsUsuario(usuario.getId(), TipoLike.LIKE)) {
+
+                    Likes likes1 = new Likes(articulo, usuario, TipoLike.DISLIKE);
+                    likesService.guardar(likes1);
+
+                    response.redirect("/verMas/" + articulo.getId());
+
+                } else {
+
+                    if (likesService.existsUsuario(usuario.getId(), TipoLike.DISLIKE)) {
+                        Likes likes = likesService.buscarByUsuario(usuario);
+                        likesService.borrar(likes);
+                    }
+
+                    if (likesService.existsUsuario(usuario.getId(), TipoLike.LIKE)) {
+
+                        Likes likes = likesService.buscarByUsuario(usuario);
+                        likesService.borrar(likes);
+
+                        Likes likes1 = new Likes(articulo, usuario, TipoLike.DISLIKE);
+                        likesService.guardar(likes1);
+                    }
+
+                    response.redirect("/verMas/" + idPost);
+                }
+
+            } else {
+                response.redirect("/errorPost");
+            }
+            return "";
+        });
 
 
         new Filtros().filtros();

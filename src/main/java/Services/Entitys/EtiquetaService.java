@@ -5,12 +5,19 @@ import Services.DAO.EtiquetaDAORun;
 import Services.DAO.Interfaces.EtiquetaDAO;
 
 import java.util.List;
-
 public class EtiquetaService implements EtiquetaDAO {
     private EtiquetaDAORun etiquetaDAO;
+    private static EtiquetaService instancia;
+
+    public static EtiquetaService getInstancia(){
+        if (instancia == null)
+            instancia = new EtiquetaService();
+
+        return instancia;
+    }
 
     public EtiquetaService() {
-        etiquetaDAO = new EtiquetaDAORun();
+        etiquetaDAO = new EtiquetaDAORun(Etiqueta.class);
     }
 
     @Override

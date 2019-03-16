@@ -8,9 +8,17 @@ import java.util.List;
 
 public class ArticuloService implements ArticuloDAO {
     private ArticuloDAORun articuloDAO;
+    private static ArticuloService instancia;
 
-    public ArticuloService(){
-        articuloDAO = new ArticuloDAORun();
+    public static ArticuloService getInstancia() {
+        if (instancia == null)
+            instancia = new ArticuloService();
+
+        return instancia;
+    }
+
+    public ArticuloService() {
+        articuloDAO = new ArticuloDAORun(Articulo.class);
     }
 
     @Override
@@ -21,11 +29,6 @@ public class ArticuloService implements ArticuloDAO {
     @Override
     public void update(Articulo e) {
         articuloDAO.update(e);
-    }
-
-    @Override
-    public long getNextID() {
-        return articuloDAO.getNextID();
     }
 
     @Override
@@ -44,18 +47,35 @@ public class ArticuloService implements ArticuloDAO {
     }
 
     @Override
+    public List<Articulo> getAllByEtiqueta(String etiqueta) {
+        return articuloDAO.getAllByEtiqueta(etiqueta);
+    }
+
+    @Override
+    public int cantPaginas() {
+        return articuloDAO.cantPaginas();
+    }
+
+    @Override
     public List<Articulo> getbyAutor(long id) {
         return articuloDAO.getbyAutor(id);
     }
 
+    @Override
+    public List<Articulo> getPagination(int pag) {
+        return articuloDAO.getPagination(pag);
+    }
 
-    public boolean buscarPost(List<Articulo> articulos, long id){
 
-        for (Articulo articulo:articulos) {
+    public boolean buscarPost(List<Articulo> articulos, long id) {
+
+        for (Articulo articulo : articulos) {
             if (articulo.getId() == id)
                 return true;
         }
 
         return false;
     }
+
 }
+

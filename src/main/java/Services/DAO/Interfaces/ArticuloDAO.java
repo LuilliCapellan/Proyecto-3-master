@@ -4,13 +4,12 @@ import DB.Articulo;
 
 import java.util.List;
 
+
 public interface ArticuloDAO {
 
     void insert(Articulo e);
 
     void update(Articulo e);
-
-    long getNextID();
 
     void delete(Articulo e);
 
@@ -18,5 +17,13 @@ public interface ArticuloDAO {
 
     List<Articulo> getbyAutor(long id);
 
+    List<Articulo> getPagination(int pag);
+
     Articulo getById(long id);
+
+    List<Articulo> getAllByEtiqueta(String etiqueta);
+
+    int cantPaginas();
+
+
 }

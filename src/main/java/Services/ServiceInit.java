@@ -70,24 +70,26 @@ public class ServiceInit {
         Statement stm = _conn.createStatement();
         //PreparedStatement prepareStatement = _conn.prepareStatement(admin);
         //Antes de ejecutar seteo los parametros.
-        stm.execute(createUsuario);
-        stm.execute(createArticulo);
-        stm.execute(createComentario);
-        stm.execute(createEtiqueta);
-
-        stm.execute(secuenciaUsuario);
-        stm.execute(secuenciaArticulo);
-        stm.execute(secuenciaEtiqueta);
-        stm.execute(secuenciaComentario);
+//        stm.execute(createUsuario);
+//        stm.execute(createArticulo);
+//        stm.execute(createComentario);
+//        stm.execute(createEtiqueta);
+//
+//        stm.execute(secuenciaUsuario);
+//        stm.execute(secuenciaArticulo);
+//        stm.execute(secuenciaEtiqueta);
+//        stm.execute(secuenciaComentario);
 
         UsuarioService usuarioService = new UsuarioService();
-        Usuario usuario = usuarioService.validateLogIn("admin", "admin");
 
-        if (usuario == null) {
-            stm.execute(admin);
+        Usuario usuario = new Usuario("admin", "admin", "admin", true,true);
+
+
+        if (usuarioService.validateLogIn("admin", "admin") == null){
+            usuarioService.insert(usuario);
         }
-
-        stm.close();
-        _conn.close();
+//
+//        stm.close();
+//        _conn.close();
     }
 }

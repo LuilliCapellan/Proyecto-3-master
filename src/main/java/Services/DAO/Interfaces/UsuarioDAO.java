@@ -3,7 +3,6 @@ package Services.DAO.Interfaces;
 import DB.Usuario;
 
 import java.util.List;
-
 public interface UsuarioDAO {
 
     void insert(Usuario e);

@@ -1,28 +1,49 @@
 package DB;
 
+import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Date;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+@Entity
+@NamedQueries({@NamedQuery(name = "Articulo.findAllArticulo", query = "select a from Articulo a order by a.fecha desc "),
+        @NamedQuery(name = "Articulo.findArticulobyAuthorId", query = "select a from Articulo a where a.autor = :id"),
+        @NamedQuery(name = "Articulo.findArticulobyId", query = "select a from Articulo a where a.id = :id"),
+        @NamedQuery(name = "Articulo.findArticulobyEtiqueta", query = "select a from Articulo a, Etiqueta e where a.id = e.articulo.id and e.etiqueta = :etiqueta")})
+public class Articulo implements Serializable {
 
-public class Articulo {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Articulo_id")
     private long id;
+    @Column
     private String titulo;
+    @Column(columnDefinition = "text")
     private String cuerpo;
+    @OneToOne
     private Usuario autor;
-    private java.sql.Date fecha;
-    private List<Comentario> listaComentarios;
-    private List<Etiqueta> listaEtiquetas;
+    @Column
+    private Date fecha;
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "articulo", cascade = CascadeType.ALL)
+    private Set<Comentario> listaComentarios;
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Etiqueta> listaEtiquetas;
+
+    @OneToMany(mappedBy = "articulo", fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Likes> likes = new HashSet<>();
 
     public Articulo() {
     }
 
-    public Articulo(String titulo, String cuerpo, Usuario autor, java.sql.Date fecha) {
+    public Articulo(String titulo, String cuerpo, Usuario autor, Date fecha) {
         this.titulo = titulo;
         this.cuerpo = cuerpo;
         this.autor = autor;
         this.fecha = fecha;
     }
 
-    public Articulo(long id, String titulo, String cuerpo, Usuario autor, java.sql.Date fecha) {
+    public Articulo(long id, String titulo, String cuerpo, Usuario autor, Date fecha) {
         this.id = id;
         this.titulo = titulo;
         this.cuerpo = cuerpo;
@@ -62,7 +83,7 @@ public class Articulo {
         this.autor = autor;
     }
 
-    public java.sql.Date getFecha() {
+    public Date getFecha() {
         return fecha;
     }
 
@@ -70,19 +91,28 @@ public class Articulo {
         this.fecha = fecha;
     }
 
-    public List<Comentario> getListaComentarios() {
+    public Set<Comentario> getListaComentarios() {
         return listaComentarios;
     }
 
-    public void setListaComentarios(List<Comentario> listaComentarios) {
+    public void setListaComentarios(Set<Comentario> listaComentarios) {
         this.listaComentarios = listaComentarios;
     }
 
-    public List<Etiqueta> getListaEtiquetas() {
+    public Set<Etiqueta> getListaEtiquetas() {
         return listaEtiquetas;
     }
 
-    public void setListaEtiquetas(List<Etiqueta> listaEtiquetas) {
+    public void setListaEtiquetas(Set<Etiqueta> listaEtiquetas) {
         this.listaEtiquetas = listaEtiquetas;
     }
+
+    public Set<Likes> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Set<Likes> likes) {
+        this.likes = likes;
+    }
 }
+

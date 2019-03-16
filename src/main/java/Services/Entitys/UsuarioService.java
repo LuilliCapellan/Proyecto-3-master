@@ -7,11 +7,19 @@ import Services.DAO.UsuarioDAORun;
 import java.util.List;
 
 public class UsuarioService implements UsuarioDAO {
+    private static UsuarioService instancia;
+
+    public static UsuarioService getInstancia() {
+        if (instancia == null)
+            instancia = new UsuarioService();
+
+        return instancia;
+    }
 
     private UsuarioDAORun usuarioDAO;
 
     public UsuarioService() {
-        usuarioDAO = new UsuarioDAORun();
+        usuarioDAO = new UsuarioDAORun(Usuario.class);
     }
 
     @Override

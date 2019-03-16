@@ -1,10 +1,20 @@
 package DB;
 
-public class Comentario {
+import javax.persistence.*;
 
+@Entity
+@NamedQueries({@NamedQuery(name = "Comentario.findAllComentario", query = "select c from Comentario c"),
+        @NamedQuery(name = "Comentario.findComentarioById", query = "select c from Comentario c where c.id = :id"),
+        @NamedQuery(name = "Comentario.findAllComentarioByArticulo", query = "select c from Comentario c join Articulo a on a.id = :id")})
+public class Comentario {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    @Column
     private String comentario;
+    @OneToOne
     private Usuario autor;
+    @ManyToOne
     private Articulo articulo;
 
     public Comentario() {

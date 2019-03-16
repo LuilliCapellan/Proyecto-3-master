@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Blog Post - Start Bootstrap Template</title>
+    <title>Blog - Practica 4 - 2014-0984</title>
 
     <!-- Bootstrap core CSS -->
     <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -23,7 +23,7 @@
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="/inicio">Inicio</a>
+        <a class="navbar-brand" href="/inicio/1">Inicio</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
                 aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -90,6 +90,18 @@
                     <a href="/eliminarPost/${articulo.autor.id}/${articulo.id}" class="btn btn-primary">Eliminar
                         Articulo</a>
                 </#if>
+                <#if (usuario??)>
+                    <div style="float: right">
+                        <a  href="/dislike/${articulo.id}" class="btn btn-danger"><span class="far fa-thumbs-down"></span> Dislike (${cantDislikes})</a>
+                        <a  href="/like/${articulo.id}" class="btn btn-success"><span class="far fa-thumbs-up"></span> Like (${cantLikes})</a>
+                    </div>
+                    <#else >
+                        <div style="float: right">
+                            <span class="far fa-thumbs-down"></span> Dislike (${cantDislikes})
+                           <span class="far fa-thumbs-up"></span> Like (${cantLikes})
+                        </div>
+                </#if>
+
 
             </div>
 
@@ -129,7 +141,14 @@
         </div>
         <!-- Sidebar Widgets Column -->
         <div class="col-md-4">
-
+            <div class="card my-4">
+                <h5 class="card-header">Etiquetas</h5>
+                <ul>
+                    <#list etiquetas as etiqueta>
+                        <li><span class="badge badge-primary">${etiqueta.etiqueta}</span></li>
+                    </#list>
+                </ul>
+            </div>
         </div>
 
     </div>
