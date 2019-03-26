@@ -87,7 +87,7 @@
                         <#list etiquetas as etiqueta>
                             <#assign y = etiqueta.articulo.id>
                             <#if (x == y?number) && etiqueta.articulo?? >
-                                <a href="/articulos?etiqueta=${etiqueta.etiqueta}"
+                                <a href="/articulos/${etiqueta.etiqueta}"
                                    class="badge badge-primary">${etiqueta.etiqueta}</a>
                             </#if>
 
